@@ -41,7 +41,7 @@ else
         /usr/bin/chmod 600 /etc/stunnel/pem.all
     fi
 fi
- 
+
 
 
 echo "Installing new certs"
@@ -57,7 +57,7 @@ echo "#Stunnel server configuration file
 
         #up this number to 7 to get full log details
         #leave it at 3 to just get critical error messages
-        debug=6
+        debug=3
 
         [stunnel]
         accept=443
@@ -75,7 +75,7 @@ echo "foreground=yes" > /etc/stunnel/stunnelF.conf
 echo "output=/dev/stdout" >> /etc/stunnel/stunnelF.conf
 cat /etc/stunnel/stunnel.conf >> /etc/stunnel/stunnelF.conf
 
-rm /etc/stunnel/stunnel.conf 
+rm /etc/stunnel/stunnel.conf
 
 
 /usr/bin/stunnel  /etc/stunnel/stunnelF.conf
