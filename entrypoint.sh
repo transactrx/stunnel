@@ -54,6 +54,7 @@ echo "#Stunnel server configuration file
         fips = no
         options = NO_SSLv2
         ciphers = HIGH:MEDIUM
+				
 
         #up this number to 7 to get full log details
         #leave it at 3 to just get critical error messages
