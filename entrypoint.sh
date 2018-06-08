@@ -51,8 +51,10 @@ echo "#Stunnel server configuration file
         cert=/etc/stunnel/pem.all
         CAfile=/etc/stunnel/pem.all
         sslVersion=all
-        fips = no
+        fips = yes
         options = NO_SSLv2
+        options = NO_TLSv1
+        options = NO_TLSv1.1
         ciphers = HIGH:MEDIUM
 				
 
