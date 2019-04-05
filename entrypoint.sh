@@ -8,8 +8,8 @@ if [ -n "$DESTINTATION" ]; then
 fi
 
 if [ -n "$DEST_PORT" ]; then
-    desthost=$(echo "$DEST_PORT"| awk -F\: '{print $2}'|cut -c3-55)
-    port=$(echo "$DEST_PORT"| awk -F\: '{print $3}')
+    desthost=$(echo "$DEST_PORT"| awk -F\: '{print $2}')
+    port=$(echo "$DEST_PORT"| awk -F\: '{print $1}')
      if [ -n "$DESTINATION_PORT" ]; then
      	port=$DESTINATION_PORT
      fi
