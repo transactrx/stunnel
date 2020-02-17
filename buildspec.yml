@@ -6,7 +6,7 @@
       - echo Logging in to Amazon ECR...
       - $(aws ecr get-login --no-include-email --region $AWS_DEFAULT_REGION)
     pre_build:
-    commands:
+      commands:
         - export ACCOUNTID=`echo $CODEBUILD_KMS_KEY_ID|awk -F':' '{print $5}'`
         - echo "accountid=$ACCOUNTID"
     build:
