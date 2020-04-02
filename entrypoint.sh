@@ -90,5 +90,8 @@ cat /etc/stunnel/stunnel.conf >> /etc/stunnel/stunnelF.conf
 
 rm /etc/stunnel/stunnel.conf
 
+echo "STUNNEL CONFIGURATION ***"
+cat /etc/stunnel/stunnelF.conf
+echo "END OF STUNNEL CONFIGURATION"
 
 /usr/bin/stunnel  /etc/stunnel/stunnelF.conf
