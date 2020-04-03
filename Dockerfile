@@ -1,11 +1,18 @@
-FROM centos:7
+FROM alpine:3
 
 COPY entrypoint.sh /opt/entrypoint.sh
 
-RUN /usr/bin/chmod +x /opt/entrypoint.sh && \
-	/usr/bin/yum -y install stunnel.x86_64 && \
-	/usr/bin/yum -y install openssl.x86_64
+RUN set -ex &&\
+    echo "http://dl-3.alpinelinux.org/alpine/edge/testing/" >> /etc/apk/repositories &&\
+    apk update && apk add --update stunnel &&\
+    apk update && apk add --update openssl &&\
+    chmod +x /opt/entrypoint.sh &&\
+    rm -rf /tmp/* \
+           /var/cache/apk/*
+
 
 EXPOSE 443
+
+RUN stunnel -version
 
 ENTRYPOINT ["/opt/entrypoint.sh"] 
