@@ -48,7 +48,7 @@ if [[ -n "$COMMONNAME" ]]; then
 else
     if [ -n "$CERTS" ]; then
         echo "Use old logic to create a certificate"
-        echo $CERTS|base64 --decode > /etc/stunnel/pem.all
+        echo $CERTS|base64 -d > /etc/stunnel/pem.all
         /usr/bin/chmod 600 /etc/stunnel/pem.all
     fi
 fi
@@ -79,7 +79,7 @@ echo "#Stunnel server configuration file
 " > /etc/stunnel/stunnel.conf
 
 if [ -n "$STUNNEL_CONFIG" ]; then
-    echo $STUNNEL_CONFIG|base64 --decode > /etc/stunnel/stunnel.conf
+    echo $STUNNEL_CONFIG|base64 -d > /etc/stunnel/stunnel.conf
 fi
 
 echo "Bringing stunel up.. watch out."
