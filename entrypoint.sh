@@ -17,7 +17,7 @@ if [ -n "$DEST_PORT" ]; then
 
         desthost=$(echo "$DEST_PORT"| awk -F\: '{print $1}')
         port=$(echo "$DEST_PORT"| awk -F\: '{print $2}')
-    
+
     fi
 
      if [ -n "$DESTINATION_PORT" ]; then
@@ -48,7 +48,7 @@ if [[ -n "$COMMONNAME" ]]; then
 else
     if [ -n "$CERTS" ]; then
         echo "Use old logic to create a certificate"
-        echo $CERTS|/usr/bin/base64 --decode > /etc/stunnel/pem.all
+        echo $CERTS|base64 --decode > /etc/stunnel/pem.all
         /usr/bin/chmod 600 /etc/stunnel/pem.all
     fi
 fi
@@ -61,12 +61,12 @@ echo "#Stunnel server configuration file
         key=/etc/stunnel/pem.all
         cert=/etc/stunnel/pem.all
         CAfile=/etc/stunnel/pem.all
-        sslVersion=all        
+        sslVersion=all
         options = NO_SSLv2
         options = NO_TLSv1
         options = NO_TLSv1.1
         ciphers = HIGH:MEDIUM
-				
+
 
         #up this number to 7 to get full log details
         #leave it at 3 to just get critical error messages
@@ -79,7 +79,7 @@ echo "#Stunnel server configuration file
 " > /etc/stunnel/stunnel.conf
 
 if [ -n "$STUNNEL_CONFIG" ]; then
-    echo $STUNNEL_CONFIG|/usr/bin/base64 --decode > /etc/stunnel/stunnel.conf
+    echo $STUNNEL_CONFIG|base64 --decode > /etc/stunnel/stunnel.conf
 fi
 
 echo "Bringing stunel up.. watch out."
