@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 echo "Stunnel starting up.."
 port=""
 desthost=""
