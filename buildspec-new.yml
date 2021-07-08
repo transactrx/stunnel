@@ -1,0 +1,33 @@
+  version: 0.2
+
+  phases:
+    install:
+      commands:
+      - echo Logging in to Amazon ECR....
+      - $(aws ecr get-login --no-include-email --region $AWS_DEFAULT_REGION)      
+    pre_build:
+      commands:
+        - export ACCOUNTID=`echo $CODEBUILD_KMS_KEY_ID|awk -F':' '{print $5}'`
+        - echo "accountid=$ACCOUNTID"             
+        - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+        - export IMAGE_TAG=build-$(echo $CODEBUILD_BUILD_ID | awk -F":" '{print $2}')
+        - echo "image tag $IMAGE_TAG"
+
+    build:
+      commands:
+      - export VERSION=$IMAGE_TAG
+      - echo "CODEBUILD version $VERSION"
+      - echo "Building pgbouncer Version $CODEBUILD_SOURCE_VERSION"
+      - DOCKERHUB_USER=`echo $DOCKERHUB_CREDENTIALS|jq -r .username`
+      - DOCKERHUB_TOKEN=`echo $DOCKERHUB_CREDENTIALS|jq -r .token`      
+      - docker --version
+      - echo $DOCKERHUB_TOKEN > pass.txt
+      - cat pass.txt|docker login --username $DOCKERHUB_USER --password-stdin
+      - docker build -t "$REPO_URL:$VERSION" .
+      - $(aws ecr get-login --no-include-email --region $AWS_DEFAULT_REGION)
+      - docker tag "$REPO_URL:$VERSION" "$REPO_URL:latest"
+      - docker push "$REPO_URL:$VERSION"
+      - docker push "$REPO_URL:latest"
+    post_build:
+      commands:
+        - echo "Build for stunnel completed on `date`"
