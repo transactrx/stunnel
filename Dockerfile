@@ -1,4 +1,4 @@
-FROM alpine:3.9
+FROM alpine:edge
 
 COPY entrypoint.sh /opt/entrypoint.sh
 
