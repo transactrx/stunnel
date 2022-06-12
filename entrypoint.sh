@@ -61,7 +61,8 @@ echo "#Stunnel server configuration file
         key=/etc/stunnel/pem.all
         cert=/etc/stunnel/pem.all
         CAfile=/etc/stunnel/pem.all
-        sslVersion=TLSv1.2,TLSv1.3
+        sslVersionMax=TLSv1.3
+        sslVersionMin=TLSv1.2
         ciphers = HIGH:MEDIUM
 
 
