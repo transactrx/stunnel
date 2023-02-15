@@ -68,7 +68,7 @@ echo "#Stunnel server configuration file
 
         #up this number to 7 to get full log details
         #leave it at 3 to just get critical error messages
-        debug=3
+        debug=1
 
         [stunnel]
         accept=443
