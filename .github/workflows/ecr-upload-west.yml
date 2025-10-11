@@ -1,0 +1,58 @@
+name: ECR Upload - us-west-2
+
+on:
+  push:
+    branches: [ "Development", "Production" ]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Generate version
+        id: version
+        run: |
+          COMMIT_HASH=$(echo "${GITHUB_SHA}" | cut -c1-7)
+          BUILD_ID=$(date -u +"%Y%m%dT%H%MZ")
+          VERSION="build-${BUILD_ID}-${COMMIT_HASH}"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Generated version: $VERSION"
+
+      - name: Configure AWS credentials (us-west-2)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_WEST }}
+          aws-region: us-west-2
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push Docker image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: stunnel
+          VERSION: ${{ env.VERSION }}
+        run: |
+          IMAGE_URI="$ECR_REGISTRY/$ECR_REPOSITORY"
+          docker build -t $IMAGE_URI:$VERSION .
+          docker tag $IMAGE_URI:$VERSION $IMAGE_URI:latest
+          docker push $IMAGE_URI:$VERSION
+          docker push $IMAGE_URI:latest
+          echo "Image pushed: $IMAGE_URI:$VERSION"
+
+      - name: Update Parameter Store (us-west-2)
+        run: |
+          PARAM_NAME="/stunnel/version/west"
+          echo "Updating parameter $PARAM_NAME to $VERSION"
+          aws ssm put-parameter \
+            --name "$PARAM_NAME" \
+            --value "$VERSION" \
+            --type String \
+            --overwrite
