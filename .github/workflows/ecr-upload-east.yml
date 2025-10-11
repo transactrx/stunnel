@@ -1,10 +1,13 @@
-name: East Image Upload
+# This workflow will build and upload a golang-based image to ECR
+# and update an AWS Parameter Store entry with the version.
+# Mirrors the structure and syntax of the working EastDeployment workflow.
 
+name: EastImageUpload
 on:
   push:
-    branches: [ "Development", "Production" ]
-
+    branches: [ "Development","Production" ]
 jobs:
+
   ##################
   # Set Deploy Environment #
   ##################
@@ -19,10 +22,7 @@ jobs:
         run: |
           echo "TARGET_ENVIRONMENT=${GITHUB_REF##*/}" >> $GITHUB_ENV
 
-  ##################
-  # Build & Push to ECR (us-east-1)
-  ##################
-  build-and-push-east:
+  build-and-push:
     runs-on: ubuntu-latest
     needs: SetDeployEnv
     permissions:
@@ -32,11 +32,8 @@ jobs:
       name: ${{ needs.SetDeployEnv.outputs.deploy_env }}
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
       - name: Generate unique DEPLOYMENT_VERSION
-        id: version
+        id: deployment_version
         run: |
           short_sha=$(echo "${GITHUB_SHA}" | cut -c1-7)
           timestamp=$(date -u +"%Y%m%dT%H%MZ")
@@ -51,39 +48,53 @@ jobs:
           role_name_prefix="TRANSACTRX_"
           role_name_suffix="_AWS_ROLE_ARN_EAST"
           AWS_ROLE=$role_name_prefix$branchUpper$role_name_suffix
-          echo "AWS_ROLE=$(echo $AWS_ROLE)" >> $GITHUB_ENV
+          echo "AWS_ROLE=$(echo $AWS_ROLE)"  >> $GITHUB_ENV
           REPO_NAME=$(echo ${GITHUB_REPOSITORY##*/})
-          echo "REPO_NAME=$REPO_NAME" >> $GITHUB_ENV
+          echo "REPO_NAME=$(echo $REPO_NAME)"  >> $GITHUB_ENV
+          #add env vars for terraform (kept for consistency)
+          echo '${{ toJSON(vars) }}'
+          # Print it to logs (debugging)
           echo "Resolved AWS_ROLE: $AWS_ROLE"
           echo "Resolved REPO_NAME: $REPO_NAME"
 
-      - name: Configure AWS credentials (us-east-1)
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: ${{ secrets[env.AWS_ROLE] }}
-          role-session-name: ${{ env.REPO_NAME }}
+          role-session-name: ${{ github.REPO_NAME }}
           aws-region: us-east-1
 
       - name: Login to Amazon ECR
-        id: login-ecr-east
+        id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Build and push Docker image (us-east-1)
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      ##############################################
+      # Replace Terraform steps with SSM update
+      ##############################################
+
+      - name: Build, tag, and push image to Amazon ECR
         env:
-          ECR_REGISTRY: ${{ steps.login-ecr-east.outputs.registry }}
-          ECR_REPOSITORY: ${{ github.repository }}
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{github.repository}}
           IMAGE_TAG: ${{ github.sha }}
           DEPLOYMENT_VERSION: ${{ env.DEPLOYMENT_VERSION }}
         run: |
-          DOCKER_REPO=$(echo "${ECR_REPOSITORY,,}")
-          echo "Building image for $DOCKER_REPO in us-east-1..."
+          DOCKER_REPO=$( echo "${ECR_REPOSITORY,,}")
+          echo "Building and pushing image for $DOCKER_REPO ..."
+          docker build --build-arg DEPLOYMENT_VERSION=$DEPLOYMENT_VERSION -t $ECR_REGISTRY/$DOCKER_REPO:latest .
           docker build --build-arg DEPLOYMENT_VERSION=$DEPLOYMENT_VERSION -t $ECR_REGISTRY/$DOCKER_REPO:$IMAGE_TAG .
-          docker tag $ECR_REGISTRY/$DOCKER_REPO:$IMAGE_TAG $ECR_REGISTRY/$DOCKER_REPO:latest
-          docker push $ECR_REGISTRY/$DOCKER_REPO:$IMAGE_TAG
           docker push $ECR_REGISTRY/$DOCKER_REPO:latest
-          echo "Updating version parameter in us-east-1"
+          docker push $ECR_REGISTRY/$DOCKER_REPO:$IMAGE_TAG
+
+      - name: Update AWS Parameter Store
+        run: |
+          PARAM_NAME="/$REPO_NAME/version/east"
+          echo "Updating AWS Parameter Store: $PARAM_NAME = $DEPLOYMENT_VERSION"
           aws ssm put-parameter \
-            --name "/$DOCKER_REPO/version/east" \
+            --name "$PARAM_NAME" \
             --value "$DEPLOYMENT_VERSION" \
             --type String \
             --overwrite
